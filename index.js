@@ -3,6 +3,8 @@ const qrcode = require("qrcode-terminal");
 const fs = require("fs");
 const path = require("path");
 
+const SEASON_NAME = "Rezza Store V1";
+
 const client = new Client({
   restartOnAuthFail: true,
   puppeteer: {
@@ -19,6 +21,8 @@ const client = new Client({
     ],
   },
   authStrategy: new LocalAuth(),
+  userAgent: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36",
+  clientName: `Google Chrome (${SEASON_NAME})`,
 });
 
 const workingHours = {
@@ -58,12 +62,27 @@ const checkTimeout = () => {
 };
 setInterval(checkTimeout, 60 * 1000);
 
+const showMainMenu = async (chatId) => {
+  userState[chatId] = { stage: 'menu', selectedBarang: null };
+  await client.sendMessage(chatId, `Terima kasih telah menghubungi *${SEASON_NAME}*!
+
+*Jam operasional Rezza:*
+Senin-Sabtu: 09.00-21.00
+Minggu: 12.00 - 21.00
+
+Silahkan pilih menu:
+Ketik 1 untuk Barang1
+Ketik 2 untuk Barang2
+Ketik 3 untuk Barang3
+Ketik 4 untuk Barang4`);
+};
+
 client.on("qr", (qr) => {
   qrcode.generate(qr, { small: true });
 });
 
 client.on("ready", () => {
-  console.log("Client is ready!");
+  console.log(`${SEASON_NAME} is ready!`);
 });
 
 client.on("message", async (msg) => {
@@ -80,18 +99,7 @@ client.on("message", async (msg) => {
   }
 
   if (text === "0") {
-    userState[chatId] = { stage: 'menu', selectedBarang: null };
-    await client.sendMessage(chatId, `Terima kasih telah menghubungi *Rezza*!
-
-*Jam operasional Rezza:*
-Senin-Sabtu: 09.00-21.00
-Minggu: 12.00 - 21.00
-
-Silahkan pilih menu:
-Ketik 1 untuk Barang1
-Ketik 2 untuk Barang2
-Ketik 3 untuk Barang3
-Ketik 4 untuk Barang4`);
+    await showMainMenu(chatId);
     return;
   }
 
@@ -123,6 +131,12 @@ Ketik 4 untuk Barang4`);
         userState[chatId].stage = 'menu';
       }
       return;
+    } else {
+      await client.sendMessage(chatId, `Halo kak, terima kasih sudah menghubungi Rezza!
+Sesaat lagi Rezza akan membalas pesan kakak.
+Untuk lihat price list dan order silahkan langsung ketik angka 0, nanti akan dilayani oleh Chatbot
+Terima kasih kak.`);
+      return;
     }
   } else if (userState[chatId].stage === 'price_selection') {
     const selectedBarang = userState[chatId].selectedBarang;
@@ -138,10 +152,17 @@ Ketik 4 untuk Barang4`);
       
       userState[chatId] = { stage: 'menu', selectedBarang: null };
       return;
+    } else if (!["0", "1", "2", "3"].includes(text)) {
+      await client.sendMessage(chatId, `Halo kak, terima kasih sudah menghubungi Rezza!
+Sesaat lagi Rezza akan membalas pesan kakak.
+Untuk lihat price list dan order silahkan langsung ketik angka 0, nanti akan dilayani oleh Chatbot
+Terima kasih kak.`);
+      return;
+    } else {
+      await client.sendMessage(chatId, "Maaf, pilihan tidak valid. Silahkan pilih nomor harga yang tersedia atau ketik 0 untuk kembali ke menu utama.");
+      return;
     }
   }
-
-  await client.sendMessage(chatId, "Maaf, input tidak valid. Silahkan pilih menu dengan angka yang sesuai atau ketik 0 untuk kembali ke menu utama.");
 });
 
 client.initialize();

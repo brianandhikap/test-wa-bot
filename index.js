@@ -66,7 +66,7 @@ const showMainMenu = async (chatId) => {
   userState[chatId] = { stage: 'menu', selectedBarang: null };
   await client.sendMessage(chatId, `Terima kasih telah menghubungi *${SEASON_NAME}*!
 
-*Jam operasional Rezza:*
+*Jam operasional Rezza PHD:*
 Senin-Sabtu: 09.00-21.00
 Minggu: 12.00 - 21.00
 
